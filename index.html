@@ -209,9 +209,10 @@ function go(v){view=v;['main','book','admin'].forEach(x=>{$('v-'+x).classList.to
 function setTz(z){const ed=adminPw&&view==='admin';let s,e;if(ed){s=fromInput($('aStart').value);e=fromInput($('aEnd').value)}tz=z;pref('ohTz',z);if(ed){if(!isNaN(s))$('aStart').value=toInput(s);if(!isNaN(e))$('aEnd').value=toInput(e);preview()}render()}
 
 /* ---------- searchable name picker ---------- */
-function cb(i){const v=lastEmail?`${nameOf(lastEmail)} · ${lastEmail}`:'';return `<div class="cb"><input id="nm-${i}" placeholder="Type your name or email" autocomplete="off" value="${esc(v)}" ${lastEmail?`data-email="${esc(lastEmail)}"`:''} oninput="cbOpen(this)" onfocus="this.select();cbOpen(this,true)" onkeydown="cbKey(event,this,${i})" onblur="setTimeout(()=>cbClose(this),150)"><div class="cbl"></div></div>`}
-function cbOpen(inp,focus){const q=focus?'':inp.value.trim().toLowerCase();if(!focus)delete inp.dataset.email;const e=$('perr-'+inp.id.slice(3));if(e)e.textContent='';
-  const m=S.pqls.filter(p=>!q||p.email.includes(q)||p.name.toLowerCase().includes(q));inp._m=m;inp._k=0;
+function cb(i){return `<div class="cb"><input id="nm-${i}" placeholder="Type your name or email" autocomplete="off" oninput="cbOpen(this)" onkeydown="cbKey(event,this,${i})" onblur="setTimeout(()=>cbClose(this),150)"><div class="cbl"></div></div>`}
+function cbOpen(inp){const q=inp.value.trim().toLowerCase();delete inp.dataset.email;const e=$('perr-'+inp.id.slice(3));if(e)e.textContent='';
+  const l0=inp.nextElementSibling;if(!q){inp._m=[];l0.style.display='none';return}
+  const m=S.pqls.filter(p=>p.email.includes(q)||p.name.toLowerCase().includes(q)).slice(0,6);inp._m=m;inp._k=0;
   const l=inp.nextElementSibling;l.innerHTML=m.length?m.map((p,k)=>`<div class="opt${k===0?' act':''}" onmousedown="cbPick(event,'${inp.id}',${k})"><b>${esc(p.name)}</b><span>${esc(p.email)}</span></div>`).join(''):'<div class="opt none">No PQL matches that</div>';l.style.display='block'}
 function cbClose(inp){if(inp&&inp.nextElementSibling)inp.nextElementSibling.style.display='none'}
 function cbPick(ev,id,k){if(ev)ev.preventDefault();const inp=$(id),p=inp._m[k];if(!p)return;inp.value=`${p.name} · ${p.email}`;inp.dataset.email=p.email;cbClose(inp)}
