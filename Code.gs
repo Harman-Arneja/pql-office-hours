@@ -6,7 +6,6 @@
 const TAB_SETTINGS = 'Settings';
 const TAB_PQLS = 'PQLs';
 const TAB_BOOKINGS = 'Bookings';
-const TAB_HOURS = 'Hours';
 const CACHE_KEY = 'state_v1';
 const CACHE_SECONDS = 60;
 
@@ -210,7 +209,8 @@ function book(slotStart, email) {
   const lock = LockService.getScriptLock();
   lock.waitLock(15000);
   try {
-    const st = read_().st;
+    const data = read_();
+    const st = data.st;
     const pql = st.pqls.filter(p => p.email === email)[0];
     if (!pql) throw new Error("That email isn't on the PQL list.");
     const slot = st.slots.filter(x => minuteKey_(x.start) === minuteKey_(slotStart))[0];
@@ -222,9 +222,12 @@ function book(slotStart, email) {
     if (st.max && mine >= st.max) {
       throw new Error(pql.name + ' already has ' + mine + ' slot' + (mine > 1 ? 's' : '') + ' (limit ' + st.max + ').');
     }
-    sheet_(TAB_BOOKINGS).appendRow([new Date(slot.start), new Date(slot.end), email, pql.name, new Date()]);
+    const now = new Date();
+    sheet_(TAB_BOOKINGS).appendRow([new Date(slot.start), new Date(slot.end), email, pql.name, now]);
     slot.who.push(email);
     cachePut_(st);
+    data.rows.push({ start: slot.start, email: email, bookedAt: now.getTime() });
+    try { writeHours_(st, data.rows); } catch (e) {}
     return stamp_(st);
   } finally {
     lock.releaseLock();
@@ -248,6 +251,8 @@ function unbook(slotStart, email) {
     rows.forEach(r => sh.deleteRow(r));
     if (slot) slot.who = slot.who.filter(e => e !== email);
     cachePut_(st);
+    const left = data.rows.filter(b => !(b.email === email && minuteKey_(b.start) === minuteKey_(slotStart)));
+    try { writeHours_(st, left); } catch (e) {}
     return stamp_(st);
   } finally {
     lock.releaseLock();
@@ -255,48 +260,57 @@ function unbook(slotStart, email) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Hours tab (updated hourly by a timer)                              */
+/* Hours tab (one per project, updated on every change in the app)    */
 /* ------------------------------------------------------------------ */
 
+/** Tab name for a project, e.g. "Hours - Personalization PQL office hours". */
+function hoursTabName_(title) {
+  const clean = String(title || 'PQL office hours').replace(/[\[\]\\\/?*:']/g, '').replace(/\s+/g, ' ').trim();
+  return ('Hours - ' + clean).slice(0, 99);
+}
+
 /**
- * Hours per PQL = time actually covered: from when they joined (Booked at,
- * or the slot start if they joined before it) until the slot end, counting
- * only time that has already passed.
+ * Each booking counts from when the PQL joined (or the slot start, if they
+ * joined earlier) until the slot end. Ended slots can't be changed, so the
+ * totals are final once the office hours window is over.
  */
-function updateHours() {
-  const data = read_();
-  const now = Date.now();
+function writeHours_(st, rows) {
   const slotByKey = {};
-  data.st.slots.forEach(x => (slotByKey[minuteKey_(x.start)] = x));
+  st.slots.forEach(x => (slotByKey[minuteKey_(x.start)] = x));
   const totals = {};
   const counted = {};
-  data.rows.forEach(b => {
+  rows.forEach(b => {
     const slot = slotByKey[minuteKey_(b.start)];
     if (!slot) return;
     const key = b.email + '|' + minuteKey_(b.start);
     if (counted[key]) return;
     counted[key] = true;
     const from = Math.max(slot.start, b.bookedAt);
-    const to = Math.min(slot.end, now);
-    if (to > from) totals[b.email] = (totals[b.email] || 0) + (to - from);
+    if (slot.end > from) totals[b.email] = (totals[b.email] || 0) + (slot.end - from);
   });
-  const rows = data.st.pqls.map(p => [p.email, p.name, Math.round((totals[p.email] || 0) / HOUR * 100) / 100]);
-  let sh = SpreadsheetApp.getActive().getSheetByName(TAB_HOURS);
-  if (!sh) sh = SpreadsheetApp.getActive().insertSheet(TAB_HOURS);
+  const ss = SpreadsheetApp.getActive();
+  const name = hoursTabName_(st.title);
+  let sh = ss.getSheetByName(name);
+  if (!sh) {
+    sh = ss.insertSheet(name);
+    sh.setFrozenRows(1);
+    sh.getRange(1, 1, 1, 4).setFontWeight('bold').setBackground('#eeebfc');
+    sh.setColumnWidths(1, 4, 210);
+  }
+  const out = st.pqls.map(p => [p.email, p.name, Math.round((totals[p.email] || 0) / HOUR * 100) / 100]);
   sh.getRange(1, 1, 1, 4).setValues([['Email', 'Name', 'Hours spent', 'Last updated']]);
   const last = Math.max(sh.getLastRow(), 2);
   sh.getRange(2, 1, last - 1, 4).clearContent();
-  if (rows.length) sh.getRange(2, 1, rows.length, 3).setValues(rows);
-  sh.getRange(2, 4).setValue(new Date(now));
+  if (out.length) {
+    sh.getRange(2, 1, out.length, 3).setValues(out);
+    sh.getRange(2, 3, out.length, 1).setNumberFormat('0.00');
+  }
+  sh.getRange(2, 4).setValue(new Date()).setNumberFormat('d mmm, h:mm am/pm');
 }
 
-/** Run once from the editor: makes updateHours run every hour. */
-function installHourlyTimer() {
-  ScriptApp.getProjectTriggers()
-    .filter(t => t.getHandlerFunction() === 'updateHours')
-    .forEach(t => ScriptApp.deleteTrigger(t));
-  ScriptApp.newTrigger('updateHours').timeBased().everyHours(1).create();
-  updateHours();
+function updateHours() {
+  const data = read_();
+  writeHours_(data.st, data.rows);
 }
 
 /* ------------------------------------------------------------------ */
@@ -351,7 +365,8 @@ function adminSave(pw, cfg) {
     lock.releaseLock();
   }
   cacheClear_();
-  const st = read_().st;
-  cachePut_(st);
-  return stamp_(st);
+  const data = read_();
+  cachePut_(data.st);
+  try { writeHours_(data.st, data.rows); } catch (e) {}
+  return stamp_(data.st);
 }
