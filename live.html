@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en" data-mode="live">
+<head>
+<meta charset="utf-8">
+<title>PQL office hours: who's on call now</title>
+<meta name="description" content="See which PQL is on the office hours call right now and join with one click.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="PQL office hours: who's on call now">
+<meta property="og:description" content="See which PQL is on the office hours call right now and join with one click.">
+<meta property="og:url" content="https://harman-arneja.github.io/pql-office-hours/live.html">
+<meta property="og:image" content="https://harman-arneja.github.io/pql-office-hours/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f5f5f3;--card:#fff;--soft:#f0efeb;--line:#e6e5e0;--line2:#d3d1c9;--tx:#1c1c1a;--tx2:#5f5e5a;--tx3:#8c8a83;--ac:#6b4fd8;--acbg:#efeafd;--ok:#1b7a4e;--okbg:#e2f4ea;--bad:#b3261e;--r:14px;--R:22px}
+@media (prefers-color-scheme:dark){:root{--bg:#131312;--card:#1d1d1b;--soft:#252523;--line:#31302d;--line2:#46453f;--tx:#efeee9;--tx2:#b1afa7;--tx3:#83817a;--ac:#b4a2ff;--acbg:#2a2348;--ok:#62d49c;--okbg:#15332a;--bad:#ff8a80}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 Inter,system-ui,sans-serif}
+.wrap{max-width:980px;margin:0 auto;padding:0 20px 80px}
+.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:16px 0;margin-bottom:22px;border-bottom:1px solid var(--line)}
+.logo{width:36px;height:36px;border-radius:10px;background:var(--acbg);color:var(--ac);display:grid;place-items:center;font-weight:700;font-size:13px}
+.brand b{display:block;font-size:16px}.brand span{font-size:12px;color:var(--tx2)}
+nav{display:flex;gap:4px}
+nav button{border:0;background:none;padding:8px 12px;border-radius:8px;color:var(--tx2);font-weight:500}
+nav button.on{background:var(--card);color:var(--tx);box-shadow:0 0 0 1px var(--line)}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:8px;overflow:hidden;background:var(--card)}
+.seg button{border:0;border-radius:0;padding:6px 12px;font-size:12px;font-weight:500;background:none;color:var(--tx2)}
+.seg button.on{background:var(--tx);color:var(--bg)}
+h1{font-size:24px;font-weight:700;margin:0 0 4px;letter-spacing:-.01em}
+h2{font-size:15px;font-weight:600;margin:0}
+.sub{color:var(--tx2);font-size:14px;margin:0 0 18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--R);padding:20px;margin-bottom:16px}
+label{display:block;font-size:12px;color:var(--tx2);margin:0 0 4px;font-weight:500}
+input,select,textarea{font:inherit;font-size:14px;color:var(--tx);background:var(--card);border:1px solid var(--line2);border-radius:10px;padding:8px 10px;width:100%}
+textarea{resize:vertical;font-family:ui-monospace,Menlo,monospace;font-size:12px}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--acbg);border-color:var(--ac)}
+button{font:inherit;font-size:14px;color:var(--tx);background:var(--card);border:1px solid var(--line2);border-radius:10px;padding:8px 14px;cursor:pointer;white-space:nowrap}
+button:hover{border-color:var(--tx3)}
+button:disabled{opacity:.6;cursor:wait}
+.pri{background:var(--ac);border-color:var(--ac);color:#fff}
+.pri:hover{border-color:var(--ac);filter:brightness(1.08)}
+.big{padding:13px 26px;font-size:16px;font-weight:600;border-radius:14px}
+.sm{padding:7px 12px;font-size:13px}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.flex{display:flex;align-items:center;gap:8px}
+.between{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.muted{color:var(--tx3);font-size:13px}
+.err{color:var(--bad);font-size:12px;margin:4px 0 0}
+.ok{color:var(--ok);font-size:13px}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;padding:3px 10px;border-radius:999px}
+.p-live{background:var(--okbg);color:var(--ok)}
+.p-full{background:var(--soft);color:var(--tx3)}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor;animation:pulse 1.6s infinite;flex:none}
+@keyframes pulse{50%{opacity:.3}}
+.av{width:38px;height:38px;border-radius:50%;background:var(--okbg);color:var(--ok);display:grid;place-items:center;font-weight:600;font-size:13px;flex:none;border:2px solid var(--card)}
+.avs{display:flex}
+.chip{font-size:12px;padding:3px 6px 3px 10px;border-radius:999px;background:var(--soft);display:inline-flex;align-items:center;gap:2px}
+.chip.noX{padding-right:10px}
+.chip button{border:0;background:none;padding:0 4px;font-size:15px;line-height:1;color:var(--tx3)}
+.chip button:hover{color:var(--bad)}
+.names{display:flex;flex-wrap:wrap;gap:6px}
+.day{font-size:12px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em;margin:22px 0 10px}
+.day:first-child{margin-top:0}
+.hide{display:none!important}
+
+.c-center{text-align:center;background:var(--card);border-radius:var(--R);padding:40px 24px;margin-bottom:28px;border:1px solid var(--line)}
+.c-center.live{border:2px solid var(--ok);padding:39px 23px}
+.c-center .when{font-size:15px;color:var(--tx2);margin:6px 0 20px}
+.c-center .who{font-size:26px;font-weight:700;margin:14px 0 4px;letter-spacing:-.01em}
+.c-center .avs{justify-content:center;margin-top:18px}
+.c-center .av{width:64px;height:64px;font-size:20px;border-width:3px}
+.c-center .av+.av{margin-left:-14px}
+.c-next{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.ctile{background:var(--card);border:1px solid var(--line);border-radius:var(--R);padding:18px;display:flex;flex-direction:column;gap:12px}
+.ctile.past{opacity:.45}
+.ctile.now{border:2px solid var(--ok);padding:17px}
+.ctile.full{background:var(--soft)}
+.ctile .t{font-size:20px;font-weight:700;letter-spacing:-.01em}
+.tz{font-size:11px;font-weight:600;color:var(--ac);background:var(--acbg);padding:1px 6px;border-radius:6px;margin-left:4px;letter-spacing:0}
+.seats{display:flex;gap:5px}
+.seat{width:12px;height:12px;border-radius:50%;background:var(--soft);border:1.5px solid var(--line2)}
+.seat.on{background:var(--ac);border-color:var(--ac)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
+
+.cb{position:relative}
+.cbl{display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);background:var(--card);border:1px solid var(--line2);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.14);z-index:20;max-height:260px;overflow:auto;padding:4px}
+.opt{padding:7px 10px;border-radius:8px;cursor:pointer;display:flex;flex-direction:column;line-height:1.3}
+.opt b{font-size:13px;font-weight:500}.opt span{font-size:11px;color:var(--tx3)}
+.opt.act,.opt:hover{background:var(--acbg)}
+.opt.none{color:var(--tx3);font-size:13px;cursor:default}
+.addbox{display:flex;flex-direction:column;gap:6px}
+
+.lock{max-width:340px;margin:30px auto;text-align:center}
+.lock .logo{margin:0 auto 12px;width:44px;height:44px}
+.stat{background:var(--soft);border-radius:var(--r);padding:12px 14px}
+.stat b{display:block;font-size:22px;font-weight:600}
+.pq{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;max-height:150px;overflow:auto}
+.pq .chip{padding-right:10px}.pq .chip span{color:var(--tx3);margin-left:4px}
+.loading{text-align:center;padding:80px 0;color:var(--tx3)}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;z-index:50;max-width:90vw}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="logo">OH</div>
+    <div class="brand"><b id="bTitle">PQL office hours</b><span id="bRange"></span></div>
+    <nav>
+      <button id="n-main" onclick="go('main')">Live now</button>
+      <button id="n-book" onclick="go('book')">Book a slot</button>
+      <button id="n-admin" onclick="go('admin')">Admin</button>
+    </nav>
+    <span style="flex:1"></span>
+    <div class="seg" aria-label="Time zone"><button id="tz-IST" onclick="setTz('IST')">IST</button><button id="tz-PST" onclick="setTz('PST')">PST</button></div>
+  </div>
+
+  <div id="loading" class="loading">Loading office hours…</div>
+
+  <section id="v-main" class="hide"></section>
+
+  <section id="v-book" class="hide">
+    <h1>Book a slot</h1>
+    <p class="sub" id="bookSub"></p>
+    <div id="bookList"></div>
+  </section>
+
+  <section id="v-admin" class="hide">
+    <div id="lock" class="lock card">
+      <div class="logo">OH</div>
+      <h2>Admin access</h2>
+      <p class="muted" style="margin:4px 0 16px">Enter the admin password to continue</p>
+      <input type="password" id="pw" placeholder="Password" onkeydown="if(event.key==='Enter')unlock()">
+      <p class="err" id="pwErr" style="min-height:18px"></p>
+      <button class="pri" id="pwBtn" style="width:100%" onclick="unlock()">Unlock</button>
+    </div>
+
+    <div id="adminBody" class="hide">
+      <div class="between"><h1>Admin setup</h1><button class="sm" onclick="lockAdmin()">Lock</button></div>
+      <p class="sub">Times below are in <b id="aTzLabel">IST</b>. Switch at the top to enter them in PST.</p>
+      <div class="row" style="margin-bottom:16px">
+        <div class="stat"><span class="muted">Total slots</span><b id="sTotal">0</b></div>
+        <div class="stat"><span class="muted">Slots with a PQL</span><b id="sBooked">0</b></div>
+        <div class="stat"><span class="muted">Empty slots</span><b id="sOpen">0</b></div>
+        <div class="stat"><span class="muted">PQLs not booked</span><b id="sMissing">0</b></div>
+      </div>
+      <div class="card">
+        <h2 style="margin-bottom:14px">Session</h2>
+        <div style="margin-bottom:12px"><label>Title</label><input id="aTitle"></div>
+        <div class="row">
+          <div><label>Start</label><input type="datetime-local" id="aStart"></div>
+          <div><label>End</label><input type="datetime-local" id="aEnd"></div>
+        </div>
+        <div class="row" style="margin-top:12px">
+          <div><label>Slot length</label><select id="aLen"><option value="1">1 hour</option><option value="1.5">1.5 hours</option><option value="2">2 hours</option><option value="3">3 hours</option></select></div>
+          <div><label>PQLs per slot</label><select id="aCap"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="0">Unlimited</option></select></div>
+          <div><label>Max slots per PQL</label><select id="aMax"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="0">No limit</option></select></div>
+        </div>
+        <p class="muted" id="aPreview" style="margin:10px 0 0"></p>
+        <div style="margin-top:14px"><label>Meeting link (same for every slot)</label><input id="aLink" placeholder="https://meet.google.com/..."></div>
+      </div>
+      <div class="card">
+        <h2 style="margin-bottom:4px">PQLs</h2>
+        <p class="muted" style="margin:0 0 10px">Paste emails straight from your sheet. Tabs, spaces, commas or new lines all work.</p>
+        <textarea id="aPql" rows="7"></textarea>
+        <p class="muted" id="aCount" style="margin:6px 0 0"></p>
+        <div class="pq" id="aChips"></div>
+      </div>
+      <p class="err" id="adminErr" style="min-height:18px;font-size:13px"></p>
+      <div class="flex"><button class="pri" id="saveBtn" onclick="saveSetup()">Save and generate slots</button><span class="ok" id="adminMsg"></span></div>
+      <p class="muted" style="margin-top:14px">Existing bookings are kept when their slot start time still exists. Bookings and settings are also visible in the spreadsheet.</p>
+    </div>
+  </section>
+</div>
+
+<script>window.onerror=function(msg,src,l,c){var d=(document.getElementById('loading')||document.body);if(d){d.classList.remove('hide');d.textContent='Error: '+msg+' (line '+l+':'+c+')'}};window.addEventListener('unhandledrejection',function(e){var d=document.getElementById('loading');if(d){d.classList.remove('hide');d.textContent='Error: '+(e.reason&&e.reason.message||e.reason)}});</script>
+<script>
+const H=36e5,TZ={IST:'Asia/Kolkata',PST:'America/Los_Angeles'},POLL_MS=30000;
+const LIVE_ONLY=document.documentElement.dataset.mode==='live';
+let S=null,tz='IST',view='main',adminPw='',lastEmail='',skew=0,busy=false,pending=0;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=(d,o)=>new Date(d).toLocaleString('en-US',{timeZone:TZ[tz],...o});
+const tf=d=>fmt(d,{hour:'numeric',minute:'2-digit'});
+const df=d=>fmt(d,{weekday:'long',month:'short',day:'numeric'});
+const dshort=d=>fmt(d,{weekday:'short',month:'short',day:'numeric'});
+function parts(d,zone){const o={};new Intl.DateTimeFormat('en-US',{timeZone:zone,hourCycle:'h23',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).formatToParts(new Date(d)).forEach(p=>o[p.type]=p.value);return o}
+function toInput(d){const p=parts(d,TZ[tz]);return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`}
+function fromInput(v){if(!v)return NaN;const [a,b]=v.split('T'),[y,m,dd]=a.split('-').map(Number),[hh,mm]=b.split(':').map(Number);const g=Date.UTC(y,m-1,dd,hh,mm),p=parts(g,TZ[tz]);return g-(Date.UTC(+p.year,+p.month-1,+p.day,+p.hour,+p.minute)-g)}
+function pref(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
+const now=()=>Date.now()+skew;
+const nameOf=e=>{const p=S&&S.pqls.find(x=>x.email===e);return p?p.name:e};
+const first=e=>nameOf(e).split(' ')[0];
+const initials=e=>nameOf(e).split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
+const full=s=>S.cap>0&&s.who.length>=S.cap;
+const countFor=e=>S.slots.filter(s=>s.who.includes(e)).length;
+function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3500)}
+function parseEmails(txt){const toks=txt.split(/[\s,;]+/).map(x=>x.trim().replace(/^<|>$/g,'').toLowerCase()).filter(Boolean);const ok=[],bad=[];toks.forEach(t=>(/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/.test(t)?ok:bad).push(t));return {ok:[...new Set(ok)],bad}}
+
+/* ---------- server calls ---------- */
+const API='https:\/\/script.google.com/macros/s/AKfycbxvoO-fc9Mrx3sqZ9rC7ZWNP_2SxKAPeGEdeE-4hqvdScgclaaaHvZ9ARBUgmMRvinvoQ/exec';
+async function call(fn,...args){let r;try{r=await fetch(API+'?fn='+encodeURIComponent(fn)+'&args='+encodeURIComponent(JSON.stringify(args))+'&t='+Date.now(),{keepalive:true})}catch(x){throw new Error('Could not reach the server. Check your connection.')}if(!r.ok)throw new Error('Server error '+r.status);const j=await r.json();if(!j.ok)throw new Error(j.error||'Something went wrong');return j.data}
+function apply(st){S=st;skew=st.serverNow-Date.now();render()}
+async function refresh(){if(busy||pending)return;try{apply(await call('getState'))}catch(e){$('loading').classList.remove('hide');$('loading').textContent='Could not load: '+e.message}}
+
+/* ---------- navigation ---------- */
+function go(v){if(LIVE_ONLY)v='main';view=v;['main','book','admin'].forEach(x=>{$('v-'+x).classList.toggle('hide',x!==v||!S);$('n-'+x).classList.toggle('on',x===v)});if(v==='admin'&&adminPw)fillAdmin();render()}
+function setTz(z){const ed=adminPw&&view==='admin';let s,e;if(ed){s=fromInput($('aStart').value);e=fromInput($('aEnd').value)}tz=z;pref('ohTz',z);if(ed){if(!isNaN(s))$('aStart').value=toInput(s);if(!isNaN(e))$('aEnd').value=toInput(e);preview()}render()}
+
+/* ---------- searchable name picker ---------- */
+function cb(i){return `<div class="cb"><input id="nm-${i}" placeholder="Type your name or email" autocomplete="off" oninput="cbOpen(this)" onkeydown="cbKey(event,this,${i})" onblur="setTimeout(()=>cbClose(this),150)"><div class="cbl"></div></div>`}
+function cbOpen(inp){const q=inp.value.trim().toLowerCase();delete inp.dataset.email;const e=$('perr-'+inp.id.slice(3));if(e)e.textContent='';
+  const l0=inp.nextElementSibling;if(!q){inp._m=[];l0.style.display='none';return}
+  const m=S.pqls.filter(p=>p.email.includes(q)||p.name.toLowerCase().includes(q)).slice(0,6);inp._m=m;inp._k=0;
+  const l=inp.nextElementSibling;l.innerHTML=m.length?m.map((p,k)=>`<div class="opt${k===0?' act':''}" onmousedown="cbPick(event,'${inp.id}',${k})"><b>${esc(p.name)}</b><span>${esc(p.email)}</span></div>`).join(''):'<div class="opt none">No PQL matches that</div>';l.style.display='block'}
+function cbClose(inp){if(inp&&inp.nextElementSibling)inp.nextElementSibling.style.display='none'}
+function cbPick(ev,id,k){if(ev)ev.preventDefault();const inp=$(id),p=inp._m[k];if(!p)return;inp.value=`${p.name} · ${p.email}`;inp.dataset.email=p.email;cbClose(inp)}
+function cbKey(ev,inp,i){const l=inp.nextElementSibling,open=l.style.display==='block';
+  if(ev.key==='ArrowDown'||ev.key==='ArrowUp'){if(!open)cbOpen(inp);ev.preventDefault();const n=inp._m.length;if(!n)return;inp._k=(inp._k+(ev.key==='ArrowDown'?1:-1)+n)%n;[...l.children].forEach((c,k)=>c.classList.toggle('act',k===inp._k));l.children[inp._k].scrollIntoView({block:'nearest'})}
+  else if(ev.key==='Enter'){ev.preventDefault();if(open&&inp._m&&inp._m.length&&!inp.dataset.email)cbPick(null,inp.id,inp._k);else add(i)}
+  else if(ev.key==='Escape')cbClose(inp)}
+function resolve(inp){if(inp.dataset.email)return inp.dataset.email;const q=inp.value.trim().toLowerCase();if(!q)return '';const ex=S.pqls.find(p=>p.email===q||p.name.toLowerCase()===q);if(ex)return ex.email;const m=S.pqls.filter(p=>p.email.includes(q)||p.name.toLowerCase().includes(q));return m.length===1?m[0].email:null}
+
+/* ---------- booking ---------- */
+async function add(i){const inp=$('nm-'+i),err=$('perr-'+i),s=S.slots[i],btn=$('add-'+i);
+  const e=resolve(inp);
+  if(e==='')return err.textContent='Type and pick your name first.';
+  if(e===null)return err.textContent="Couldn't find that PQL. Pick from the list.";
+  if(s.who.includes(e))return err.textContent="You're already in this slot.";
+  if(full(s))return err.textContent='This slot is full.';
+  const c=countFor(e);if(S.max&&c>=S.max)return err.textContent=`${first(e)} already has ${c} slot${c>1?'s':''} (limit ${S.max}).`;
+  const start=s.start,slotOf=()=>S.slots.find(z=>z.start===start);
+  lastEmail=e;pref('ohMe',e);s.who.push(e);pending++;render();
+  call('book',start,e).then(st=>{pending--;if(!pending)apply(st);toast(`${nameOf(e)} added to ${dshort(start)}, ${tf(start)} ${tz}`)})
+  .catch(x=>{pending--;const t=slotOf();if(t)t.who=t.who.filter(w=>w!==e);render();toast(`${nameOf(e)} wasn't added: ${x.message}`);if(!pending)refresh()})}
+function removeName(i,e){const s=S.slots[i],start=s.start,slotOf=()=>S.slots.find(z=>z.start===start);
+  s.who=s.who.filter(w=>w!==e);pending++;render();
+  call('unbook',start,e).then(st=>{pending--;if(!pending)apply(st);toast(`${nameOf(e)} removed`)})
+  .catch(x=>{pending--;const t=slotOf();if(t&&!t.who.includes(e))t.who.push(e);render();toast(`${nameOf(e)} wasn't removed: ${x.message}`);if(!pending)refresh()})}
+
+/* ---------- admin ---------- */
+async function unlock(){const pw=$('pw').value;$('pwErr').textContent='';$('pwBtn').disabled=true;
+  try{const st=await call('adminLogin',pw);adminPw=pw;$('pw').value='';apply(st);fillAdmin()}catch(x){$('pwErr').textContent=x.message}
+  $('pwBtn').disabled=false}
+function lockAdmin(){adminPw='';render()}
+function fillAdmin(){$('aTitle').value=S.title;$('aStart').value=toInput(S.start);$('aEnd').value=toInput(S.end);$('aLen').value=S.len;$('aCap').value=S.cap;$('aMax').value=S.max;$('aLink').value=S.link;$('aPql').value=S.pqls.map(p=>p.email).join('\n');preview()}
+function preview(){const s=fromInput($('aStart').value),e=fromInput($('aEnd').value),len=+$('aLen').value,{ok,bad}=parseEmails($('aPql').value);
+  $('aCount').innerHTML=`${ok.length} PQL${ok.length===1?'':'s'} found`+(bad.length?` · <span style="color:var(--bad)">${bad.length} not an email: ${bad.slice(0,3).map(esc).join(', ')}${bad.length>3?'…':''}</span>`:'');
+  $('aChips').innerHTML=ok.map(x=>`<span class="chip">${esc(x)}</span>`).join('');
+  if(isNaN(s)||isNaN(e)||e<=s){$('aPreview').textContent='Set a start and end time.';return}
+  const hrs=(e-s)/H,n=Math.floor(hrs/len),left=+(hrs-n*len).toFixed(2);$('aPreview').textContent=`${+hrs.toFixed(1)} hours → ${n} slots of ${len}h`+(left?` (last ${left}h unused)`:'')}
+async function saveSetup(){const err=$('adminErr');err.textContent='';$('adminMsg').textContent='';
+  const s=fromInput($('aStart').value),e=fromInput($('aEnd').value),len=+$('aLen').value,{ok}=parseEmails($('aPql').value),link=$('aLink').value.trim();
+  if(isNaN(s)||isNaN(e)||e<=s)return err.textContent='End time must be after start time.';
+  if((e-s)/H<len)return err.textContent='The window is shorter than one slot.';
+  if(!/^https?:[/][/]/.test(link))return err.textContent='Add a meeting link starting with https:\/\/';
+  if(!ok.length)return err.textContent='Paste at least one PQL email.';
+  $('saveBtn').disabled=true;busy=true;
+  try{const st=await call('adminSave',adminPw,{title:$('aTitle').value.trim(),start:s,end:e,len,cap:+$('aCap').value,max:+$('aMax').value,link,emails:ok});busy=false;apply(st);fillAdmin();$('adminMsg').textContent=`Saved · ${st.slots.length} slots, ${st.pqls.length} PQLs`}
+  catch(x){busy=false;err.textContent=x.message}
+  $('saveBtn').disabled=false}
+
+/* ---------- views ---------- */
+const st=(s,n)=>({past:s.end<=n,now:s.start<=n&&n<s.end});
+function days(list){const g=[];(list||S.slots.map((s,i)=>[s,i])).forEach(([s,i])=>{const d=df(s.start);let x=g[g.length-1];if(!x||x.d!==d)g.push(x={d,items:[]});x.items.push([s,i])});return g}
+const chips=(s,i,x)=>s.who.length?s.who.map(e=>`<span class="chip${x?'':' noX'}" title="${esc(e)}">${esc(nameOf(e))}${x?`<button aria-label="Remove ${esc(nameOf(e))}" onclick="removeName(${i},'${esc(e)}')">&times;</button>`:''}</span>`).join(''):'<span class="muted">No one yet</span>';
+const seats=s=>S.cap?`<div class="seats" title="${s.who.length} of ${S.cap} seats taken">${Array.from({length:S.cap},(_,k)=>`<span class="seat${k<s.who.length?' on':''}"></span>`).join('')}</div>`:`<span class="muted">${s.who.length} in</span>`;
+
+function mainView(n){const live=S.slots.find(s=>s.start<=n&&n<s.end),next=S.slots.find(s=>s.start>n&&s.who.length);let h;
+  if(live&&live.who.length){const mins=Math.max(1,Math.round((live.end-n)/6e4));
+    h=`<div class="c-center live"><span class="pill p-live"><span class="dot"></span>Live now</span><div class="avs">${live.who.map(e=>`<div class="av">${esc(initials(e))}</div>`).join('')}</div><div class="who">${live.who.map(e=>esc(first(e))).join(', ')}</div><div class="when">${tf(live.start)} – ${tf(live.end)} ${tz} · ${mins} min left</div><a href="${esc(S.link)}" target="_blank" rel="noopener"><button class="pri big">Join call</button></a></div>`}
+  else h=`<div class="c-center"><span class="pill p-full">${live?'No one on call':'Offline'}</span><div class="who">${live?'No PQL in this slot':'Outside office hours'}</div>${next?`<div class="when" style="margin-bottom:0">Next up at ${tf(next.start)} ${tz}: ${next.who.map(e=>esc(first(e))).join(', ')}</div>`:''}</div>`;
+  const up=S.slots.map((s,i)=>[s,i]).filter(([s])=>s.start>n);
+  h+=`<h2 style="margin-bottom:12px">Coming up</h2>`+(up.length?days(up).map(g=>`<div class="day">${g.d}</div><div class="c-next">${g.items.map(([s,i])=>`<div class="ctile"><div class="t">${tf(s.start)} <span class="muted" style="font-weight:400">to ${tf(s.end)}</span><span class="tz">${tz}</span></div><div class="names">${chips(s,i)}</div></div>`).join('')}</div>`).join(''):'<p class="muted">No more slots.</p>');return h}
+
+function bookView(n){return days().map(g=>`<div class="day">${g.d}</div><div class="tiles">${g.items.map(([s,i])=>{const x=st(s,n),f=full(s);
+  return `<div class="ctile${x.past?' past':''}${x.now?' now':''}${f&&!x.past?' full':''}"><div class="between"><div><div class="t">${tf(s.start)}</div><div class="muted">to ${tf(s.end)}<span class="tz">${tz}</span>${x.now?' · happening now':''}</div></div>${x.past?'<span class="muted">Done</span>':f?'<span class="pill p-full">Full</span>':seats(s)}</div><div class="names">${chips(s,i,!x.past)}</div>${x.past||f?'':`<div><div class="addbox">${cb(i)}<button class="sm pri" id="add-${i}" onclick="add(${i})">Add</button></div><div class="err" id="perr-${i}"></div></div>`}</div>`}).join('')}</div>`).join('')}
+
+function render(){if(!S)return;const n=now();
+  $('loading').classList.add('hide');
+  ['main','book','admin'].forEach(x=>$('v-'+x).classList.toggle('hide',x!==view));
+  ['IST','PST'].forEach(z=>$('tz-'+z).classList.toggle('on',z===tz));
+  $('bTitle').textContent=S.title;$('bRange').textContent=`${dshort(S.start)} ${tf(S.start)} – ${dshort(S.end)} ${tf(S.end)} ${tz}`;
+  if(view==='main')$('v-main').innerHTML=mainView(n);
+  if(view==='book'){const a=document.activeElement;if(!(a&&a.id&&a.id.startsWith('nm-'))){
+    $('bookSub').textContent=`Type your name, then click Add on any open slot. Times in ${tz}. `+(S.cap?`Up to ${S.cap} PQL${S.cap>1?'s':''} per slot`:'No limit per slot')+(S.max?`, ${S.max} slot${S.max>1?'s':''} per PQL.`:'.');
+    $('bookList').innerHTML=bookView(n)}}
+  $('lock').classList.toggle('hide',!!adminPw);$('adminBody').classList.toggle('hide',!adminPw);$('aTzLabel').textContent=tz;
+  const booked=S.slots.filter(s=>s.who.length).length,inAny=new Set(S.slots.flatMap(s=>s.who));
+  $('sTotal').textContent=S.slots.length;$('sBooked').textContent=booked;$('sOpen').textContent=S.slots.length-booked;$('sMissing').textContent=S.pqls.filter(p=>!inAny.has(p.email)).length}
+
+/* ---------- start ---------- */
+(function init(){if(LIVE_ONLY){$('n-book').classList.add('hide');$('n-admin').classList.add('hide')}const z=pref('ohTz');if(TZ[z])tz=z;const me=pref('ohMe');if(me)lastEmail=me;
+  ['aStart','aEnd','aLen','aPql'].forEach(id=>$(id).addEventListener('input',preview));
+  refresh().then(()=>{if(lastEmail&&S&&!S.pqls.some(p=>p.email===lastEmail))lastEmail='';go('main')});
+  setInterval(refresh,POLL_MS);setInterval(()=>{if(view==='main')render()},60000)})();
+</script>
+</body>
+</html>

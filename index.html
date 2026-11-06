@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>PQL office hours</title>
-<meta name="description" content="Pick a 2-hour office hours slot and see who's on call right now.">
+<meta name="description" content="Pick a 2-hour office hours slot and see who's on call right now. Times in IST and PST.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="PQL office hours: book your slot">
 <meta property="og:description" content="Pick a 2-hour office hours slot and see who's on call right now. Times in IST and PST.">
@@ -178,6 +178,7 @@ button:disabled{opacity:.6;cursor:wait}
 <script>window.onerror=function(msg,src,l,c){var d=(document.getElementById('loading')||document.body);if(d){d.classList.remove('hide');d.textContent='Error: '+msg+' (line '+l+':'+c+')'}};window.addEventListener('unhandledrejection',function(e){var d=document.getElementById('loading');if(d){d.classList.remove('hide');d.textContent='Error: '+(e.reason&&e.reason.message||e.reason)}});</script>
 <script>
 const H=36e5,TZ={IST:'Asia/Kolkata',PST:'America/Los_Angeles'},POLL_MS=30000;
+const LIVE_ONLY=document.documentElement.dataset.mode==='live';
 let S=null,tz='IST',view='main',adminPw='',lastEmail='',skew=0,busy=false,pending=0;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -205,7 +206,7 @@ function apply(st){S=st;skew=st.serverNow-Date.now();render()}
 async function refresh(){if(busy||pending)return;try{apply(await call('getState'))}catch(e){$('loading').classList.remove('hide');$('loading').textContent='Could not load: '+e.message}}
 
 /* ---------- navigation ---------- */
-function go(v){view=v;['main','book','admin'].forEach(x=>{$('v-'+x).classList.toggle('hide',x!==v||!S);$('n-'+x).classList.toggle('on',x===v)});if(v==='admin'&&adminPw)fillAdmin();render()}
+function go(v){if(LIVE_ONLY)v='main';view=v;['main','book','admin'].forEach(x=>{$('v-'+x).classList.toggle('hide',x!==v||!S);$('n-'+x).classList.toggle('on',x===v)});if(v==='admin'&&adminPw)fillAdmin();render()}
 function setTz(z){const ed=adminPw&&view==='admin';let s,e;if(ed){s=fromInput($('aStart').value);e=fromInput($('aEnd').value)}tz=z;pref('ohTz',z);if(ed){if(!isNaN(s))$('aStart').value=toInput(s);if(!isNaN(e))$('aEnd').value=toInput(e);preview()}render()}
 
 /* ---------- searchable name picker ---------- */
@@ -291,7 +292,7 @@ function render(){if(!S)return;const n=now();
   $('sTotal').textContent=S.slots.length;$('sBooked').textContent=booked;$('sOpen').textContent=S.slots.length-booked;$('sMissing').textContent=S.pqls.filter(p=>!inAny.has(p.email)).length}
 
 /* ---------- start ---------- */
-(function init(){const z=pref('ohTz');if(TZ[z])tz=z;const me=pref('ohMe');if(me)lastEmail=me;
+(function init(){if(LIVE_ONLY){$('n-book').classList.add('hide');$('n-admin').classList.add('hide')}const z=pref('ohTz');if(TZ[z])tz=z;const me=pref('ohMe');if(me)lastEmail=me;
   ['aStart','aEnd','aLen','aPql'].forEach(id=>$(id).addEventListener('input',preview));
   refresh().then(()=>{if(lastEmail&&S&&!S.pqls.some(p=>p.email===lastEmail))lastEmail='';go('main')});
   setInterval(refresh,POLL_MS);setInterval(()=>{if(view==='main')render()},60000)})();
