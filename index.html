@@ -178,7 +178,7 @@ button:disabled{opacity:.6;cursor:wait}
 <script>window.onerror=function(msg,src,l,c){var d=(document.getElementById('loading')||document.body);if(d){d.classList.remove('hide');d.textContent='Error: '+msg+' (line '+l+':'+c+')'}};window.addEventListener('unhandledrejection',function(e){var d=document.getElementById('loading');if(d){d.classList.remove('hide');d.textContent='Error: '+(e.reason&&e.reason.message||e.reason)}});</script>
 <script>
 const H=36e5,TZ={IST:'Asia/Kolkata',PST:'America/Los_Angeles'},POLL_MS=30000;
-let S=null,tz='IST',view='main',adminPw='',lastEmail='',skew=0,busy=false;
+let S=null,tz='IST',view='main',adminPw='',lastEmail='',skew=0,busy=false,pending=0;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=(d,o)=>new Date(d).toLocaleString('en-US',{timeZone:TZ[tz],...o});
@@ -200,9 +200,9 @@ function parseEmails(txt){const toks=txt.split(/[\s,;]+/).map(x=>x.trim().replac
 
 /* ---------- server calls ---------- */
 const API='https:\/\/script.google.com/macros/s/AKfycbxvoO-fc9Mrx3sqZ9rC7ZWNP_2SxKAPeGEdeE-4hqvdScgclaaaHvZ9ARBUgmMRvinvoQ/exec';
-async function call(fn,...args){let r;try{r=await fetch(API+'?fn='+encodeURIComponent(fn)+'&args='+encodeURIComponent(JSON.stringify(args))+'&t='+Date.now())}catch(x){throw new Error('Could not reach the server. Check your connection.')}if(!r.ok)throw new Error('Server error '+r.status);const j=await r.json();if(!j.ok)throw new Error(j.error||'Something went wrong');return j.data}
+async function call(fn,...args){let r;try{r=await fetch(API+'?fn='+encodeURIComponent(fn)+'&args='+encodeURIComponent(JSON.stringify(args))+'&t='+Date.now(),{keepalive:true})}catch(x){throw new Error('Could not reach the server. Check your connection.')}if(!r.ok)throw new Error('Server error '+r.status);const j=await r.json();if(!j.ok)throw new Error(j.error||'Something went wrong');return j.data}
 function apply(st){S=st;skew=st.serverNow-Date.now();render()}
-async function refresh(){if(busy)return;try{apply(await call('getState'))}catch(e){$('loading').classList.remove('hide');$('loading').textContent='Could not load: '+e.message}}
+async function refresh(){if(busy||pending)return;try{apply(await call('getState'))}catch(e){$('loading').classList.remove('hide');$('loading').textContent='Could not load: '+e.message}}
 
 /* ---------- navigation ---------- */
 function go(v){view=v;['main','book','admin'].forEach(x=>{$('v-'+x).classList.toggle('hide',x!==v||!S);$('n-'+x).classList.toggle('on',x===v)});if(v==='admin'&&adminPw)fillAdmin();render()}
@@ -229,10 +229,14 @@ async function add(i){const inp=$('nm-'+i),err=$('perr-'+i),s=S.slots[i],btn=$('
   if(s.who.includes(e))return err.textContent="You're already in this slot.";
   if(full(s))return err.textContent='This slot is full.';
   const c=countFor(e);if(S.max&&c>=S.max)return err.textContent=`${first(e)} already has ${c} slot${c>1?'s':''} (limit ${S.max}).`;
-  btn.disabled=true;btn.textContent='Adding…';busy=true;
-  try{const st=await call('book',s.start,e);lastEmail=e;pref('ohMe',e);busy=false;apply(st);toast(`${nameOf(e)} added to ${dshort(s.start)}, ${tf(s.start)} ${tz}`)}
-  catch(x){busy=false;btn.disabled=false;btn.textContent='Add';err.textContent=x.message;refresh()}}
-async function removeName(i,e){const s=S.slots[i];busy=true;try{const st=await call('unbook',s.start,e);busy=false;apply(st);toast(`${nameOf(e)} removed`)}catch(x){busy=false;toast(x.message)}}
+  const start=s.start,slotOf=()=>S.slots.find(z=>z.start===start);
+  lastEmail=e;pref('ohMe',e);s.who.push(e);pending++;render();
+  call('book',start,e).then(st=>{pending--;if(!pending)apply(st);toast(`${nameOf(e)} added to ${dshort(start)}, ${tf(start)} ${tz}`)})
+  .catch(x=>{pending--;const t=slotOf();if(t)t.who=t.who.filter(w=>w!==e);render();toast(`${nameOf(e)} wasn't added: ${x.message}`);if(!pending)refresh()})}
+function removeName(i,e){const s=S.slots[i],start=s.start,slotOf=()=>S.slots.find(z=>z.start===start);
+  s.who=s.who.filter(w=>w!==e);pending++;render();
+  call('unbook',start,e).then(st=>{pending--;if(!pending)apply(st);toast(`${nameOf(e)} removed`)})
+  .catch(x=>{pending--;const t=slotOf();if(t&&!t.who.includes(e))t.who.push(e);render();toast(`${nameOf(e)} wasn't removed: ${x.message}`);if(!pending)refresh()})}
 
 /* ---------- admin ---------- */
 async function unlock(){const pw=$('pw').value;$('pwErr').textContent='';$('pwBtn').disabled=true;

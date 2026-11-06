@@ -6,6 +6,9 @@
 const TAB_SETTINGS = 'Settings';
 const TAB_PQLS = 'PQLs';
 const TAB_BOOKINGS = 'Bookings';
+const TAB_HOURS = 'Hours';
+const CACHE_KEY = 'state_v1';
+const CACHE_SECONDS = 60;
 
 // Labels in column A of the Settings tab.
 const KEY = {
@@ -134,7 +137,8 @@ function bookings_() {
     const start = values[r][0];
     const email = String(values[r][2] || '').trim().toLowerCase();
     if (!(start instanceof Date) || !email) continue;
-    out.push({ row: r + 1, start: start.getTime(), email: email });
+    const at = values[r][4] instanceof Date ? values[r][4].getTime() : start.getTime();
+    out.push({ row: r + 1, start: start.getTime(), email: email, bookedAt: at });
   }
   return out;
 }
@@ -153,7 +157,8 @@ const minuteKey_ = ms => Math.round(ms / 60000);
 /* Called from the page                                               */
 /* ------------------------------------------------------------------ */
 
-function getState() {
+/** Reads the sheet once and returns { st, rows }. */
+function read_() {
   const s = settings_();
   const pqls = pqls_();
   const valid = {};
@@ -161,22 +166,51 @@ function getState() {
   const slots = slotList_(s).map(x => ({ start: x.start, end: x.end, who: [] }));
   const byKey = {};
   slots.forEach(x => (byKey[minuteKey_(x.start)] = x));
-  bookings_().forEach(b => {
+  const rows = bookings_();
+  rows.forEach(b => {
     const slot = byKey[minuteKey_(b.start)];
     if (slot && valid[b.email] && slot.who.indexOf(b.email) < 0) slot.who.push(b.email);
   });
-  return {
+  const st = {
     title: s.title, start: s.start, end: s.end, len: s.len, cap: s.cap, max: s.max, link: s.link,
-    pqls: pqls, slots: slots, serverNow: Date.now()
+    pqls: pqls, slots: slots
   };
+  return { st: st, rows: rows };
+}
+
+function cachePut_(st) {
+  try { CacheService.getScriptCache().put(CACHE_KEY, JSON.stringify(st), CACHE_SECONDS); } catch (e) {}
+}
+
+function cacheClear_() {
+  try { CacheService.getScriptCache().remove(CACHE_KEY); } catch (e) {}
+}
+
+function stamp_(st) {
+  st.serverNow = Date.now();
+  return st;
+}
+
+/** Page load and polling: served from a short cache when possible. */
+function getState() {
+  let st = null;
+  try {
+    const hit = CacheService.getScriptCache().get(CACHE_KEY);
+    if (hit) st = JSON.parse(hit);
+  } catch (e) {}
+  if (!st) {
+    st = read_().st;
+    cachePut_(st);
+  }
+  return stamp_(st);
 }
 
 function book(slotStart, email) {
   email = String(email || '').trim().toLowerCase();
   const lock = LockService.getScriptLock();
-  lock.waitLock(10000);
+  lock.waitLock(15000);
   try {
-    const st = getState();
+    const st = read_().st;
     const pql = st.pqls.filter(p => p.email === email)[0];
     if (!pql) throw new Error("That email isn't on the PQL list.");
     const slot = st.slots.filter(x => minuteKey_(x.start) === minuteKey_(slotStart))[0];
@@ -189,29 +223,80 @@ function book(slotStart, email) {
       throw new Error(pql.name + ' already has ' + mine + ' slot' + (mine > 1 ? 's' : '') + ' (limit ' + st.max + ').');
     }
     sheet_(TAB_BOOKINGS).appendRow([new Date(slot.start), new Date(slot.end), email, pql.name, new Date()]);
-    SpreadsheetApp.flush();
+    slot.who.push(email);
+    cachePut_(st);
+    return stamp_(st);
   } finally {
     lock.releaseLock();
   }
-  return getState();
 }
 
 function unbook(slotStart, email) {
   email = String(email || '').trim().toLowerCase();
   const lock = LockService.getScriptLock();
-  lock.waitLock(10000);
+  lock.waitLock(15000);
   try {
-    const rows = bookings_()
+    const data = read_();
+    const st = data.st;
+    const slot = st.slots.filter(x => minuteKey_(x.start) === minuteKey_(slotStart))[0];
+    if (slot && slot.end <= Date.now()) throw new Error("That slot has ended, so it can't be changed.");
+    const rows = data.rows
       .filter(b => b.email === email && minuteKey_(b.start) === minuteKey_(slotStart))
       .map(b => b.row)
       .sort((a, b) => b - a);
     const sh = sheet_(TAB_BOOKINGS);
     rows.forEach(r => sh.deleteRow(r));
-    SpreadsheetApp.flush();
+    if (slot) slot.who = slot.who.filter(e => e !== email);
+    cachePut_(st);
+    return stamp_(st);
   } finally {
     lock.releaseLock();
   }
-  return getState();
+}
+
+/* ------------------------------------------------------------------ */
+/* Hours tab (updated hourly by a timer)                              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Hours per PQL = time actually covered: from when they joined (Booked at,
+ * or the slot start if they joined before it) until the slot end, counting
+ * only time that has already passed.
+ */
+function updateHours() {
+  const data = read_();
+  const now = Date.now();
+  const slotByKey = {};
+  data.st.slots.forEach(x => (slotByKey[minuteKey_(x.start)] = x));
+  const totals = {};
+  const counted = {};
+  data.rows.forEach(b => {
+    const slot = slotByKey[minuteKey_(b.start)];
+    if (!slot) return;
+    const key = b.email + '|' + minuteKey_(b.start);
+    if (counted[key]) return;
+    counted[key] = true;
+    const from = Math.max(slot.start, b.bookedAt);
+    const to = Math.min(slot.end, now);
+    if (to > from) totals[b.email] = (totals[b.email] || 0) + (to - from);
+  });
+  const rows = data.st.pqls.map(p => [p.email, p.name, Math.round((totals[p.email] || 0) / HOUR * 100) / 100]);
+  let sh = SpreadsheetApp.getActive().getSheetByName(TAB_HOURS);
+  if (!sh) sh = SpreadsheetApp.getActive().insertSheet(TAB_HOURS);
+  sh.getRange(1, 1, 1, 4).setValues([['Email', 'Name', 'Hours spent', 'Last updated']]);
+  const last = Math.max(sh.getLastRow(), 2);
+  sh.getRange(2, 1, last - 1, 4).clearContent();
+  if (rows.length) sh.getRange(2, 1, rows.length, 3).setValues(rows);
+  sh.getRange(2, 4).setValue(new Date(now));
+}
+
+/** Run once from the editor: makes updateHours run every hour. */
+function installHourlyTimer() {
+  ScriptApp.getProjectTriggers()
+    .filter(t => t.getHandlerFunction() === 'updateHours')
+    .forEach(t => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger('updateHours').timeBased().everyHours(1).create();
+  updateHours();
 }
 
 /* ------------------------------------------------------------------ */
@@ -224,7 +309,9 @@ function checkPw_(pw) {
 
 function adminLogin(pw) {
   checkPw_(pw);
-  return getState();
+  const st = read_().st;
+  cachePut_(st);
+  return stamp_(st);
 }
 
 /**
@@ -263,5 +350,8 @@ function adminSave(pw, cfg) {
   } finally {
     lock.releaseLock();
   }
-  return getState();
+  cacheClear_();
+  const st = read_().st;
+  cachePut_(st);
+  return stamp_(st);
 }
