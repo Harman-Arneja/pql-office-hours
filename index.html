@@ -78,7 +78,8 @@ button:disabled{opacity:.6;cursor:wait}
 .ctile.past{opacity:.45}
 .ctile.now{border:2px solid var(--ok);padding:17px}
 .ctile.full{background:var(--soft)}
-.ctile .t{font-size:20px;font-weight:700;letter-spacing:-.01em}
+.ctile .t{font-size:18px;font-weight:700;letter-spacing:-.01em}
+.ctile .t .tz{font-size:12px;font-weight:600;color:var(--ac);background:var(--acbg);padding:2px 6px;border-radius:6px;vertical-align:3px;margin-left:2px}
 .seats{display:flex;gap:5px}
 .seat{width:12px;height:12px;border-radius:50%;background:var(--soft);border:1.5px solid var(--line2)}
 .seat.on{background:var(--ac);border-color:var(--ac)}
@@ -184,6 +185,10 @@ const fmt=(d,o)=>new Date(d).toLocaleString('en-US',{timeZone:TZ[tz],...o});
 const tf=d=>fmt(d,{hour:'numeric',minute:'2-digit'});
 const df=d=>fmt(d,{weekday:'long',month:'short',day:'numeric'});
 const dshort=d=>fmt(d,{weekday:'short',month:'short',day:'numeric'});
+const otz=()=>tz==='IST'?'PST':'IST';
+const tfz=(d,z)=>new Date(d).toLocaleString('en-US',{timeZone:TZ[z],hour:'numeric',minute:'2-digit'});
+const dz=(d,z)=>new Date(d).toLocaleString('en-US',{timeZone:TZ[z],weekday:'short',month:'short',day:'numeric'});
+const range=s=>`<div class="t">${tf(s.start)} – ${tf(s.end)} <span class="tz">${tz}</span></div><div class="muted">${dz(s.start,otz())!==dshort(s.start)?dz(s.start,otz())+', ':''}${tfz(s.start,otz())} – ${tfz(s.end,otz())} ${otz()}</div>`;
 function parts(d,zone){const o={};new Intl.DateTimeFormat('en-US',{timeZone:zone,hourCycle:'h23',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).formatToParts(new Date(d)).forEach(p=>o[p.type]=p.value);return o}
 function toInput(d){const p=parts(d,TZ[tz]);return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`}
 function fromInput(v){if(!v)return NaN;const [a,b]=v.split('T'),[y,m,dd]=a.split('-').map(Number),[hh,mm]=b.split(':').map(Number);const g=Date.UTC(y,m-1,dd,hh,mm),p=parts(g,TZ[tz]);return g-(Date.UTC(+p.year,+p.month-1,+p.day,+p.hour,+p.minute)-g)}
@@ -257,7 +262,7 @@ async function saveSetup(){const err=$('adminErr');err.textContent='';$('adminMs
 
 /* ---------- views ---------- */
 const st=(s,n)=>({past:s.end<=n,now:s.start<=n&&n<s.end});
-function days(){const g=[];S.slots.forEach((s,i)=>{const d=df(s.start);let x=g[g.length-1];if(!x||x.d!==d)g.push(x={d,items:[]});x.items.push([s,i])});return g}
+function days(list){const g=[];(list||S.slots.map((s,i)=>[s,i])).forEach(([s,i])=>{const d=df(s.start);let x=g[g.length-1];if(!x||x.d!==d)g.push(x={d,items:[]});x.items.push([s,i])});return g}
 const chips=(s,i,x)=>s.who.length?s.who.map(e=>`<span class="chip${x?'':' noX'}" title="${esc(e)}">${esc(nameOf(e))}${x?`<button aria-label="Remove ${esc(nameOf(e))}" onclick="removeName(${i},'${esc(e)}')">&times;</button>`:''}</span>`).join(''):'<span class="muted">No one yet</span>';
 const seats=s=>S.cap?`<div class="seats" title="${s.who.length} of ${S.cap} seats taken">${Array.from({length:S.cap},(_,k)=>`<span class="seat${k<s.who.length?' on':''}"></span>`).join('')}</div>`:`<span class="muted">${s.who.length} in</span>`;
 
@@ -265,11 +270,11 @@ function mainView(n){const live=S.slots.find(s=>s.start<=n&&n<s.end),next=S.slot
   if(live&&live.who.length){const mins=Math.max(1,Math.round((live.end-n)/6e4));
     h=`<div class="c-center live"><span class="pill p-live"><span class="dot"></span>Live now</span><div class="avs">${live.who.map(e=>`<div class="av">${esc(initials(e))}</div>`).join('')}</div><div class="who">${live.who.map(e=>esc(first(e))).join(', ')}</div><div class="when">${tf(live.start)} – ${tf(live.end)} ${tz} · ${mins} min left</div><a href="${esc(S.link)}" target="_blank" rel="noopener"><button class="pri big">Join call</button></a></div>`}
   else h=`<div class="c-center"><span class="pill p-full">${live?'No one on call':'Offline'}</span><div class="who">${live?'No PQL in this slot':'Outside office hours'}</div>${next?`<div class="when" style="margin-bottom:0">Next up at ${tf(next.start)} ${tz}: ${next.who.map(e=>esc(first(e))).join(', ')}</div>`:''}</div>`;
-  const up=S.slots.map((s,i)=>[s,i]).filter(([s])=>s.start>n).slice(0,6);
-  h+=`<h2 style="margin-bottom:12px">Coming up</h2><div class="c-next">${up.map(([s,i])=>`<div class="ctile"><div class="muted">${dshort(s.start)}</div><div class="t">${tf(s.start)} <span class="muted" style="font-weight:400">to ${tf(s.end)}</span></div><div class="names">${chips(s,i)}</div></div>`).join('')||'<p class="muted">No more slots.</p>'}</div>`;return h}
+  const up=S.slots.map((s,i)=>[s,i]).filter(([s])=>s.start>n);
+  h+=`<h2 style="margin-bottom:4px">Coming up</h2><p class="muted" style="margin:0 0 14px">Times in ${tz}, with ${otz()} below.</p>`+(up.length?days(up).map(g=>`<div class="day">${g.d}</div><div class="c-next">${g.items.map(([s,i])=>`<div class="ctile">${range(s)}<div class="names">${chips(s,i)}</div></div>`).join('')}</div>`).join(''):'<p class="muted">No more slots.</p>');return h}
 
 function bookView(n){return days().map(g=>`<div class="day">${g.d}</div><div class="tiles">${g.items.map(([s,i])=>{const x=st(s,n),f=full(s);
-  return `<div class="ctile${x.past?' past':''}${x.now?' now':''}${f&&!x.past?' full':''}"><div class="between"><div><div class="t">${tf(s.start)}</div><div class="muted">to ${tf(s.end)} ${tz}${x.now?' · happening now':''}</div></div>${x.past?'<span class="muted">Done</span>':f?'<span class="pill p-full">Full</span>':seats(s)}</div><div class="names">${chips(s,i,!x.past)}</div>${x.past||f?'':`<div><div class="addbox">${cb(i)}<button class="sm pri" id="add-${i}" onclick="add(${i})">Add</button></div><div class="err" id="perr-${i}"></div></div>`}</div>`}).join('')}</div>`).join('')}
+  return `<div class="ctile${x.past?' past':''}${x.now?' now':''}${f&&!x.past?' full':''}"><div class="between" style="align-items:flex-start"><div>${range(s)}${x.now?'<div class="ok" style="font-size:12px;margin-top:2px">Happening now</div>':''}</div>${x.past?'<span class="muted">Done</span>':f?'<span class="pill p-full">Full</span>':seats(s)}</div><div class="names">${chips(s,i,!x.past)}</div>${x.past||f?'':`<div><div class="addbox">${cb(i)}<button class="sm pri" id="add-${i}" onclick="add(${i})">Add</button></div><div class="err" id="perr-${i}"></div></div>`}</div>`}).join('')}</div>`).join('')}
 
 function render(){if(!S)return;const n=now();
   $('loading').classList.add('hide');
@@ -278,7 +283,7 @@ function render(){if(!S)return;const n=now();
   $('bTitle').textContent=S.title;$('bRange').textContent=`${dshort(S.start)} ${tf(S.start)} – ${dshort(S.end)} ${tf(S.end)} ${tz}`;
   if(view==='main')$('v-main').innerHTML=mainView(n);
   if(view==='book'){const a=document.activeElement;if(!(a&&a.id&&a.id.startsWith('nm-'))){
-    $('bookSub').textContent=`Type your name, then click Add on any open slot. Times in ${tz}. `+(S.cap?`Up to ${S.cap} PQL${S.cap>1?'s':''} per slot`:'No limit per slot')+(S.max?`, ${S.max} slot${S.max>1?'s':''} per PQL.`:'.');
+    $('bookSub').textContent=`Type your name, then click Add on any open slot. Times in ${tz}, with ${otz()} below. `+(S.cap?`Up to ${S.cap} PQL${S.cap>1?'s':''} per slot`:'No limit per slot')+(S.max?`, ${S.max} slot${S.max>1?'s':''} per PQL.`:'.');
     $('bookList').innerHTML=bookView(n)}}
   $('lock').classList.toggle('hide',!!adminPw);$('adminBody').classList.toggle('hide',!adminPw);$('aTzLabel').textContent=tz;
   const booked=S.slots.filter(s=>s.who.length).length,inAny=new Set(S.slots.flatMap(s=>s.who));
